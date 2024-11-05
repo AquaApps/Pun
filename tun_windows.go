@@ -18,6 +18,6 @@ func openStream(parentCtx context.Context) (*Stream, error) {
 }
 
 func closeStream(closer io.ReadWriteCloser) {
-	panic("`closeStream` not implement")
 	// todo: not implement
+	panic("`closeStream` not implement")
 }

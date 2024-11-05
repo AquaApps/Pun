@@ -42,8 +42,11 @@ func _openTunDevices() (int, error) {
 }
 
 func openStreamWithIP(config *Config, parentCtx context.Context) (*Stream, error) {
+	if config.MTU > 1600 {
+		panic("Unsupported MTU.")
+	}
 	if _req != nil {
-		return nil, fmt.Errorf("you have already opened a tun device")
+		panic("You have already opened a tun device. If you want to make a extra stream, use `openStream`.")
 	}
 	_req = _initIfReq(config.Name)
 

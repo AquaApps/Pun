@@ -6,15 +6,6 @@ import (
 	"sync"
 )
 
-func opened(_ctx context.Context) bool {
-	select {
-	case <-_ctx.Done():
-		return false
-	default:
-		return true
-	}
-}
-
 func newStream(file *os.File, parentCtx context.Context) *Stream {
 	stream := new(Stream)
 	stream._inputStream = make(chan []byte)
@@ -42,31 +33,42 @@ func (stream *Stream) open() (<-chan []byte, chan<- []byte) {
 // todo: move Pool to Device
 var bufferPool = &sync.Pool{
 	New: func() interface{} {
-		return make([]byte, 64*1024)
+		return make([]byte, 1600)
 	},
 }
 
 func (stream *Stream) readFromTunnel() {
-	for opened(*stream._life) {
-		packet := bufferPool.Get().([]byte)
-		num, err := stream._io.Read(packet)
-		if err != nil {
-			continue
+	for {
+		select {
+		case <-(*stream._life).Done():
+			return
+		default:
+			packet := bufferPool.Get().([]byte)
+			num, err := stream._io.Read(packet)
+			if !stream._reading {
+				break
+			}
+			if err != nil {
+				continue
+			}
+
+			stream._outputStream <- packet[:num]
 		}
-		if !stream._reading {
-			break
-		}
-		stream._outputStream <- packet[:num]
 	}
 }
 
 func (stream *Stream) writeToTunnel() {
-	for opened(*stream._life) {
-		packet := <-stream._inputStream
-		if !stream._reading {
-			break
+	for {
+		select {
+		case <-(*stream._life).Done():
+			return
+		case packet := <-stream._inputStream:
+			if !stream._reading {
+				break
+			}
+			if num, _ := stream._io.Write(packet); num == 1600 {
+				bufferPool.Put(packet)
+			}
 		}
-		_, _ = stream._io.Write(packet)
-		bufferPool.Put(packet)
 	}
 }
