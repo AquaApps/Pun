@@ -2,11 +2,11 @@ package pun
 
 import (
 	"context"
-	"os"
+	"io"
 	"sync"
 )
 
-func newStream(file *os.File, parentCtx context.Context) *Stream {
+func newStream(file io.ReadWriteCloser, parentCtx context.Context) *Stream {
 	stream := new(Stream)
 	stream._inputStream = make(chan []byte)
 	stream._outputStream = make(chan []byte)
