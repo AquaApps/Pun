@@ -2,10 +2,11 @@ package pun
 
 import (
 	"context"
-	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/windows"
 	"golang.zx2c4.com/wireguard/tun"
+	"golang.zx2c4.com/wireguard/windows/tunnel/winipcfg"
 	"io"
+	"net/netip"
 )
 
 type winDev struct {
@@ -34,23 +35,16 @@ func openStreamWithIP(config *Config, parentCtx context.Context) (*Stream, error
 	if err != nil {
 		return nil, err
 	}
+	nativeTunDevice := dev.(*tun.NativeTun)
+	link := winipcfg.LUID(nativeTunDevice.LUID())
 
-	netInterface, err := netlink.LinkByName(config.Name)
+	ipPrefix, err := netip.ParsePrefix(config.CIDRv4.String())
 	if err != nil {
 		return nil, err
 	}
 
-	addrV4 := &netlink.Addr{IPNet: &(config.CIDRv4), Label: ""}
-
-	if err = netlink.LinkSetMTU(netInterface, config.MTU); err != nil {
-		return nil, err
-	}
-
-	if err = netlink.AddrAdd(netInterface, addrV4); err != nil {
-		return nil, err
-	}
-
-	if err = netlink.LinkSetUp(netInterface); err != nil {
+	err = link.AddIPAddress(ipPrefix)
+	if err != nil {
 		return nil, err
 	}
 

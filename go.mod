@@ -6,6 +6,7 @@ require (
 	github.com/vishvananda/netlink v1.3.0
 	golang.org/x/sys v0.12.0
 	golang.zx2c4.com/wireguard v0.0.0-20220703234212-c31a7b1ab478
+	golang.zx2c4.com/wireguard/windows v0.5.3
 )
 
 require (
